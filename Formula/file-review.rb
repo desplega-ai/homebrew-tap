@@ -1,17 +1,17 @@
 class FileReview < Formula
   desc "File review tool with CodeMirror editor and Vim bindings"
   homepage "https://github.com/desplega-ai/ai-toolbox"
-  version "1.1.0"
+  version "1.2.1"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/desplega-ai/ai-toolbox/releases/download/file-review-v#{version}/file-review-darwin-arm64"
-      sha256 "3a3d06a202dc90bed0f40a5922e494704e10eaaa7b998d4148dee68fd4e465a8"
+      sha256 "e12a95587b58f388de496291636aeed1b5186d86b1e1b78df3ac8da5590420f0"
     end
     on_intel do
       url "https://github.com/desplega-ai/ai-toolbox/releases/download/file-review-v#{version}/file-review-darwin-x86_64"
-      sha256 "3b5768361074f19ee493ca062ab44d1ba4933006ca1d29daf958bb718d7a9298"
+      sha256 "1ec8164687608a325428a693cbeafb0303787e9f97b16f31b39685a2f8e99723"
     end
   end
 

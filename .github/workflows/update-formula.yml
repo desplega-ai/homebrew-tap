@@ -1,0 +1,104 @@
+name: Update Formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      formula:
+        description: 'Formula to update'
+        required: true
+        type: choice
+        options:
+          - file-review
+      tag:
+        description: 'Release tag (e.g., file-review-v1.0.3)'
+        required: true
+        type: string
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tap repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update formula
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          FORMULA="${{ github.event.inputs.formula }}"
+          TAG="${{ github.event.inputs.tag }}"
+
+          # Formula-specific configuration
+          case "$FORMULA" in
+            file-review)
+              REPO="desplega-ai/ai-toolbox"
+              VERSION="${TAG#file-review-v}"
+              ARM64_ARTIFACT="${FORMULA}-darwin-arm64"
+              X86_64_ARTIFACT="${FORMULA}-darwin-x86_64"
+              ;;
+            *)
+              echo "Unknown formula: $FORMULA"
+              exit 1
+              ;;
+          esac
+
+          echo "Updating $FORMULA to version $VERSION from $REPO"
+
+          # Download SHA256 checksum files
+          BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
+
+          echo "Fetching checksums..."
+          SHA256_ARM64=$(curl -sL "${BASE_URL}/${ARM64_ARTIFACT}.sha256" | awk '{print $1}')
+          SHA256_X86_64=$(curl -sL "${BASE_URL}/${X86_64_ARTIFACT}.sha256" | awk '{print $1}')
+
+          if [ -z "$SHA256_ARM64" ] || [ -z "$SHA256_X86_64" ]; then
+            echo "Failed to fetch checksums"
+            exit 1
+          fi
+
+          echo "ARM64 SHA256: $SHA256_ARM64"
+          echo "x86_64 SHA256: $SHA256_X86_64"
+
+          # Update the formula file
+          FORMULA_FILE="Formula/${FORMULA}.rb"
+
+          # Update version
+          sed -i "s/version \".*\"/version \"${VERSION}\"/" "$FORMULA_FILE"
+
+          # Update ARM64 sha256 (appears first in the file)
+          # Use a temp file approach for reliable multi-line matching
+          awk -v new_sha="$SHA256_ARM64" '
+            /on_arm do/ { in_arm=1 }
+            in_arm && /sha256/ {
+              sub(/sha256 "[^"]*"/, "sha256 \"" new_sha "\"")
+              in_arm=0
+            }
+            { print }
+          ' "$FORMULA_FILE" > "${FORMULA_FILE}.tmp" && mv "${FORMULA_FILE}.tmp" "$FORMULA_FILE"
+
+          # Update x86_64 sha256
+          awk -v new_sha="$SHA256_X86_64" '
+            /on_intel do/ { in_intel=1 }
+            in_intel && /sha256/ {
+              sub(/sha256 "[^"]*"/, "sha256 \"" new_sha "\"")
+              in_intel=0
+            }
+            { print }
+          ' "$FORMULA_FILE" > "${FORMULA_FILE}.tmp" && mv "${FORMULA_FILE}.tmp" "$FORMULA_FILE"
+
+          echo "Updated formula:"
+          cat "$FORMULA_FILE"
+
+          # Commit and push
+          git add "$FORMULA_FILE"
+          git commit -m "Update ${FORMULA} to ${VERSION}"
+          git push

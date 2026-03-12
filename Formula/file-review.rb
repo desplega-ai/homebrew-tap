@@ -1,7 +1,7 @@
 class FileReview < Formula
   desc "File review tool with CodeMirror editor and Vim bindings"
   homepage "https://github.com/desplega-ai/ai-toolbox"
-  version "v1.7.1"
+  version "1.7.1"
   license "MIT"
 
   on_macos do

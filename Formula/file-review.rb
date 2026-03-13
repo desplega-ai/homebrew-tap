@@ -7,11 +7,11 @@ class FileReview < Formula
   on_macos do
     on_arm do
       url "https://github.com/desplega-ai/ai-toolbox/releases/download/file-review-v#{version}/file-review-darwin-arm64"
-      sha256 "Not"
+      sha256 "d8bc9b7b351c673c39b7b6a0b1cc9f4654e8bda6b0834a563f78d489dd40e23d"
     end
     on_intel do
       url "https://github.com/desplega-ai/ai-toolbox/releases/download/file-review-v#{version}/file-review-darwin-x86_64"
-      sha256 "Not"
+      sha256 "17cabb8e671d3a5929e37a88f89cf921c5a40ca5a465b4d4bea601b2feb2e9b6"
     end
   end
 

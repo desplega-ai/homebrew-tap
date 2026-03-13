@@ -57,11 +57,21 @@ jobs:
           BASE_URL="https://github.com/${REPO}/releases/download/${TAG}"
 
           echo "Fetching checksums..."
-          SHA256_ARM64=$(curl -sL "${BASE_URL}/${ARM64_ARTIFACT}.sha256" | awk '{print $1}')
-          SHA256_X86_64=$(curl -sL "${BASE_URL}/${X86_64_ARTIFACT}.sha256" | awk '{print $1}')
+          SHA256_ARM64=$(gh release download "$TAG" --repo "$REPO" --pattern "${ARM64_ARTIFACT}.sha256" --output - | awk '{print $1}')
+          SHA256_X86_64=$(gh release download "$TAG" --repo "$REPO" --pattern "${X86_64_ARTIFACT}.sha256" --output - | awk '{print $1}')
 
           if [ -z "$SHA256_ARM64" ] || [ -z "$SHA256_X86_64" ]; then
             echo "Failed to fetch checksums"
+            exit 1
+          fi
+
+          # Validate checksums look like actual SHA256 hashes
+          if ! echo "$SHA256_ARM64" | grep -qE '^[0-9a-f]{64}$'; then
+            echo "Invalid ARM64 checksum: '$SHA256_ARM64'"
+            exit 1
+          fi
+          if ! echo "$SHA256_X86_64" | grep -qE '^[0-9a-f]{64}$'; then
+            echo "Invalid x86_64 checksum: '$SHA256_X86_64'"
             exit 1
           fi
 
